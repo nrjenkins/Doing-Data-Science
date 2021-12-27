@@ -1,0 +1,15 @@
+"0","data.1 %>% "
+"0","  mutate(ctr = clicks / impressions) %>% "
+"0","  ggplot(aes(x = age_group, y = ctr, fill = age_group)) +"
+"0","  geom_violin() +"
+"0","  geom_boxplot(width = 0.1, color = ""black"", fill = ""white"") +"
+"0","  labs(title = ""Distribution of Impressions by Age Group"","
+"0","       x = ""Impressions"","
+"0","       fill = ""Age Group"",) +"
+"0","  ggpubr::theme_pubclean()"
+"2","Warning:"
+"2"," Removed 3066 rows containing non-finite values (stat_ydensity).
+"
+"2","Warning:"
+"2"," Removed 3066 rows containing non-finite values (stat_boxplot).
+"

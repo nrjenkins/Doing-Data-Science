@@ -1,0 +1,1346 @@
+---
+title: "Getting What You Want, or Going Where You're Told? Clarifying the Role of Caucus Fundraising in the Committee Assignment Process"
+author: |
+  | Nicholas R. Jenkins^[nicholas.jenkins@email.ucr.edu]
+  | University of California, Riverside
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+abstract: |
+  | Fundraising ability is important for career advancement in Congress. What is unknown, however, is whether party leaders reward strong fundraisers with the positions that they want, or leaders strategically place strong fundraisers in positions to optimize fundraising for their party. Using data on legislators’ committee requests and assignments from the 102nd to the 110th Congress, I show that the members who bring in the most money for their party are those that are most likely to be placed on lucrative committees despite their requested committee preferences. This finding clarifies the role of fundraising in committee assignment decisions and highlights the extent to which party leaders are willing to exercise their power to the advance their collective interests. Moreover, this finding suggests that...[why does it matter that members are exploited and not rewarded?]
+  | **Keywords:** Campaign Finance; Committee Assignments; Committee Requests
+output: 
+  bookdown::html_document2:
+    toc: no
+    number_sections: yes
+    df_print: kable
+  bookdown::word_document2:
+    toc: no
+    number_sections: yes
+    df_print: kable
+  bookdown::pdf_document2:
+    toc: no
+    number_sections: yes
+    keep_tex: yes
+    df_print: kable
+#bibliography: refs.bib
+bibliography: /Users/nickjenkins/Documents/Research/References/BibTeX/biblatex.bib
+csl: /Users/nickjenkins/Documents/Research/References/BibTeX/american-political-science-association.csl
+link-citations: yes
+header-includes:
+  - \usepackage{setspace}\doublespacing
+  - \usepackage{lineno}
+  - \linenumbers
+  - \setlength{\parindent}{1.5em}
+  - \setlength{\parskip}{0em}
+  - \usepackage[bottom]{footmisc}
+  - \usepackage{subfig}
+fontsize: 12pt
+geometry: "top = 1in, right = 1in, left = 1in, bottom = 1in"
+nocite: |
+  @skinner2014
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(error = FALSE)
+load("Data/Clean Data/estimation_data_2.Rda")
+load(file = "Data/Clean Data/rep_estimation_data.Rda")
+load(file = "Data/Clean Data/dem_estimation_data.Rda")
+
+library(pacman)
+p_load(tidyverse, tidybayes, patchwork, ggpubr, brms, bayestestR)
+
+# install.packages("remotes")
+# remotes::install_github("tjmahr/printy")
+
+# estimation.data <-
+#   estimation.data %>%
+#   filter(party_contribs != 1276050.00) %>%
+#   filter(party_contribs != 1076300.00) %>%
+#   filter(party_contribs != 930600.00)
+
+theme_clean <- function() {
+  theme(panel.grid.minor = element_blank(),
+        plot.title = element_text(face = "bold"),
+        axis.title = element_text(face = "bold"),
+        strip.text = element_text(face = "bold", size = rel(1), hjust = 0),
+        strip.background = element_rect(fill = "grey80", color = NA),
+        legend.title = element_text(face = "bold"))
+}
+```
+
+```{r}
+# Uncomment to automatically update .bib file
+# URL provided by Better Bibtex for Zotero.
+# download.file(
+#   "http://127.0.0.1:23119/better-bibtex/export/library?/1/library.biblatex",
+#   "refs.bib")
+```
+
+# Introduction
+
+At the beginning of the 117th Congress, Alexandra Ocasio-Cortez (D-NY) and Kathleen Rice (D-NY) faced-off for a seat on the highly coveted House Energy and Commerce Committee [@ferris2020]. Speaker Pelosi (D-CA) all but arranged this contest by submitting a list of preferred candidates to the Democratic steering committee (which is responsible for assigning lawmakers to standing committees) for just four of the five available seats. As the steering committee members debated each candidate's merits, several Democrats argued against Congresswoman Ocasio-Cortez, citing her efforts to help progressive challengers unseat more moderate Democratic incumbents and her refusal to make campaign contributions to the Democratic Congressional Campaign Committee.
+
+At the same time Democrats were settling this standoff, a similar battle was playing out among Republicans. Michael Burgess (R-TX), Cathy McMorris Rodgers (R-WA), and Greg Walden (R-OR) were pursuing the top GOP seat on the Energy and Commerce committee [@brufke2020]. Each member had multiple meetings with the Republican Steering Committee where they touted their substantial contributions to the National Republican Congressional Committee (NRCC) and other Republican candidates, which the steering committee indicated was an essential consideration in determining the assignment. Ultimately, Congresswoman McMorris Rodgers, who gave more money to the NRCC (\$1.2 million) and other Republican candidates (\$265,000) than Congressmen Burgess and Walden, won the seat.
+
+These anecdotes highlight the fact that parties in Congress care about fundraising, but how much do legislators' campaign contributions to their parties' campaign organizations and other party candidates affect their career trajectories? Recent work suggests that in pursuit of majority control of Congress, party leaders reserve important legislative positions for members who demonstrate a strong ability to fundraise for their party. With the cost of campaigns continually rising, party leaders are desperate to raise the money they need to get their members elected and maintain control of Congress. One way they do this is by incentivizing, or requiring, their members to raise money for the party. For example, members who make larger contributions to their party's congressional campaign committees have a higher chance of transferring to prestige committees [@heberlig2003; also see @heberlig2012]. Other work shows that member contributions are an important consideration for leadership and committee chair positions [@heberlig2006; @heberlig2007; @cann2008a; @kistnerForthcoming].
+
+While this body of research provides convincing evidence that party leaders emphasize fundraising ability when making decisions about their members, it is based on the assumption that caucus fundraising helps members get to where they want to go. It remains unclear, however, whether party leaders reward strong fundraisers with the positions that they want, or strategically place strong fundraisers in positions to optimize fundraising for the party. In other words, do strong fundraisers get what they want, or do they go where they are told? This is a difficult question to answer because it is challenging to gather data on informal negotiations that could lead to leadership positions, committee chairmanships, and committee transfers. In addition, it is difficult to know if a leadership appointment or committee assignment was one that a member wanted.
+
+In this article, I use data on legislators' committee requests and assignments from the `r str_c(min(estimation.data$congress), "nd")` to the `r str_c(max(estimation.data$congress), "th")` Congress to determine whether top contributors are more likely to receive the committee assignments that they requested, or if they are placed on important committees despite their expressed preferences. With these data on `r nrow(estimation.data)` Republican and Democratic committee requests, I show that members who give more money to their party's reelection efforts are most likely to be placed on lucrative committees independent of their committee preferences. These results hold after controlling for measures of legislator competency further indicating that fundraising ability is prioritized over a member's ability to preform legislative duties.
+
+These findings help clarify the role that caucus fundraising plays in the committee assignment process by showing that strong fundraisers are strategically placed on committees rather than given the committee assignments that they request. These results also challenges the prevailing theory that steering committees operate with the goal of accommodating member committee preferences by showing that party leaders exercise top-down control over the committee assignments of at least some members [e.g. @shepsle1978].
+
+# Institutional Advancement and Collective Action
+
+The topic of campaign fundraising in Congress is traditionally discussed as a collective active problem for political parties. It is argued that being the majority party in Congress affords many important benefits to members. Majority party members can more easily accomplish their legislative goals and deliver benefits to constituents [@cox1993], but in order to obtain majority status members need to get elected, something that requires a lot of money. Not all members, however, can raise money equally as well. Senior members of Congress and congressional leaders all raise money much more easily because of their influence in the chamber, established track records, and likelihood of being reelected [@grier1986, @snyder1992, @bonica2014, @fouirnaies2018]. Conversely, more junior members and challengers are a risk to donors because they are unlikely to win and because their legislative behavior is less predictable Thus, in order to realize the benefits of being in the majority party, members should be willing to redistribute campaign funds in such a was as to maximize the chances of each member winning their election. This redistribution is not so easily realized, however, because members have a strong incentive to tend to their own election needs. Individually, members want to raise as much money as possible to get (re)elected and amass a war chest to discourage potential challengers in the future [@ansolabehere2000].
+
+To overcome this collective action problem, party leaders offer their members with selective benefits for contributing funds to their party's campaign arm that can be redistributed to members in need. For example, members who make large contributions to their party's congressional campaign committees and party's candidates have been given leadership positions [@heberlig2006, @heberlig2007, @cann2008], committee chairmanships [@kistnerForthcoming], and even more favorable treatment of legislation [@hasecke2007].
+
+Although fundraising ability and a willingness to contribute to the party are important to party leaders, they are not the only qualities that leaders want. Party leadership also incentivizes qualities like loyalty and policy expertise. Loyalty is important to increase party voting on important role calls by giving committee chair positions to members who consistently vote with their party on important roll calls [@cox2005]. Incentivizing policy expertise helps produce more effective policies and is selected by rewarding members with specific committee assignments and seniority by giving members with the most seniority leadership positions [@krehbiel1992]. While these have historically been important qualities, there is growing evidence that party leaders care more about fundraising ability than anything else.
+
+As competition for majority status in Congress has increased over the last couple decades, party leaders started shifting their priorities towards raising more money to support their members' campaigns. In recent years, fundraising has become so crucial to party leaders that members are expected to spend around 30 hours a week on the phone at Republican and Democratic call centers raising money [@odonnell2016]. Congressman David Jolly (R-FL) was so frustrated with this pressure that he introduced the Stop Act, an amendment to the Federal Election Campaign Act of 1971 to "prohibit an individual holding federal office from soliciting funds directly from any person: (1) for or on behalf of any political committee, or (2) for or on the behalf of any person for use for federal election activity", in the 114th Congress [@jolly2016]. As a result of Congressman Jolly's vocal opposition to these fundraising practices, the NRCC pledged not to help him with his reelection which he ultimately lost.
+
+The increased importance on caucus fundraising eventually manifested itself with formal programs requiring members to pay dues for their committee and leadership positions. These programs attach fundraising targets for all party members that are scaled up depending on the committees that members are assigned to and the leadership positions that they hold. For example, the Democratic Congressional Campaign Committee dues for the 2020 cycle ranged from \$150,000 for more junior members up to \$1,000,000 for the Speaker of the House. In addition, seats on the prestigious Ways and Means, Appropriations, Energy and Commerce, and Financial Services committees all have higher fundraising targets than other non-exclusive committees.^[These documents are found online from various sources: [2020 Cycle DCC Dues](https://beta.documentcloud.org/documents/6381161-July-Caucus-Report-2019-DRAFT), [2012 Cycle DCC Dues](http://www.g-a-i.org/wp-content/uploads/2013/10/Extortion-Docs-DCCC-.pdf), [2012 Cycle NRCC Dues](http://www.g-a-i.org/wp-content/uploads/2013/10/RCCC-Extortion-Docs.pdf), [https://www.issueone.org/price-of-power](https://www.issueone.org/price-of-power/).] The fundraising targets for Republicans follow a similar pattern. These schedules clearly show that both parties expect more senior members and members with influential positions to raise more money than junior members without positions of influence.
+
+```{r trends, fig.align = "left", fig.dim = c(10, 5), fig.cap = "Per Candidate Contribution Patterns Over Time. This figure shows the contribution patterns of Democratic and Republican members of Congress over time. The shaded region indicates the portion of data used in this study."}
+load(file = "Data/Clean Data/plot.cand.data.Rda")
+load(file = "Data/Clean Data/plot.cand.data.2.Rda")
+load(file = "Data/Clean Data/plot.ccc.data.Rda")
+
+plot.cand.data <- 
+  plot.cand.data %>%
+  rename(cand_contrib_amount_1 = cand_contrib_amount)
+
+plot.cand.data.2 <- 
+  plot.cand.data.2 %>%
+  rename(cand_contrib_amount_2 = cand_contrib_amount)
+
+cand.plot.data <- 
+  left_join(plot.cand.data, plot.cand.data.2,
+            by = c("congress", "party"))
+
+plot.data <- 
+  left_join(cand.plot.data, plot.ccc.data,
+            by = c("congress", "party"))
+
+plot.data <- 
+  plot.data %>%
+  mutate(cand_contrib_amount = cand_contrib_amount_1 + cand_contrib_amount_2) %>%
+  select(-cand_contrib_amount_1, -cand_contrib_amount_2)
+
+plot.data <- 
+  plot.data %>%
+  pivot_longer(cols = c(ccc_contrib_amount:cand_contrib_amount), 
+               names_to = "recipient",
+               values_to = "contrib_amount") %>%
+  mutate(recipient = factor(recipient,
+                            levels = c("ccc_contrib_amount", 
+                                       "cand_contrib_amount"),
+                            labels = c("Contributions to CCCs",
+                                       "Contributions to Party Candidates")),
+         party = factor(party,
+                        levels = c("Democrat", "Republican"),
+                        labels = c("Democrats", "Republicans")))
+
+p_load(scales, ggpubr)
+ggplot(data = plot.data, 
+       aes(x = congress, y = contrib_amount, linetype = recipient)) +
+  geom_ribbon(data = subset(plot.data, 102 <= congress & congress <= 110),
+          aes(ymin = 310000, ymax = 0), fill = "grey77", alpha = 0.2) +
+  annotate("text", x = 106, y = 300000, label = "Estimation Sample") +
+  geom_line() +
+  facet_wrap(~ party) +
+  scale_y_continuous(labels = dollar_format(), 
+                     breaks = pretty_breaks(n = 8)) +
+  scale_x_continuous(limits = c(102, 116),
+                     breaks = seq(from = 102, to = 116, by = 2)) +
+  labs(y = "Per Candidate Contribution Amount", x = "Congress", linetype = "") +
+  scale_linetype_manual(values = c(1, 2, 3, 6)) +
+  theme_pubr()
+```
+
+```{r Max Contributions}
+# Identify the max contributions for each party to be reported below
+p_load(formattable)
+max.data <- 
+  plot.data %>% 
+  group_by(party) %>% 
+  filter(contrib_amount == max(contrib_amount)) %>% 
+  mutate(contrib_amount = plyr::round_any(contrib_amount, accuracy = 10000)) %>% 
+  ungroup() %>% 
+  mutate(contrib_amount = currency(contrib_amount, digits = 0))
+```
+
+The increasing emphasis on caucus fundraising is also reflected in the pattern of contributions from members to their parties and parties candidates over time. Figure \@ref(fig:trends) shows the amount of money per candidate that members contributed to their party's congressional campaign committee (CCC) and their party's candidates during the election cycle leading up to a given session of Congress. For both parties, contributions to the CCCs and party candidates show a distinct upward trend, and reach a high of almost `r max.data[max.data$party == "Democrats", 4][[1]]` per candidate for Democrats in the `r max.data[max.data$party == "Democrats", 1][[1]]`th Congress and about `r max.data[max.data$party == "Republicans", 4][[1]]` for Republicans in the `r max.data[max.data$party == "Republicans", 1][[1]]`th Congress. These trends are consistent with what we would expect if party leaders are increasingly concerned with caucus fundraising and are incentivizing their members to make larger contributions to their party's election efforts.
+
+It is clear that party leaders in Congress want to raise money for their party, but do they reward their members' fundraising efforts or do they exploit them? Researchers investigating caucus fundraising have typically assumed the former. For example, previous research finds that leadership and committee chair positions are given to the members that contribute the most money to their party's campaign organizations [@heberlig2006; @heberlig2007; @cann2008a; @kistnerForthcoming]. In looking at committee transfers, @heberlig2003 finds that members who make larger contributions to their party and party's candidates are more likely to be transferred to a prestige committee (which is composed of the most lucrative committees). However, without accounting for what positions or committee assignments members wanted, these studies are unable to distinguish between members being rewarded or exploited. In assuming that members are rewarded, these studies could have drawn unwarranted claims regarding the strategic behavior of party leaders. 
+
+I argue party leaders exploit their member's fundraising abilities in a way that maximizes their party's fundraising potential and that leaders favor fundraising ability over competency when making decisions about congressional organization. If leaders are concerned with raising money to help maintain a majority status in Congress, then they should consider putting their party's best fundraisers into positions that would maximize their party's campaign contributions. One area where strategically positioning members in Congress would make a big difference is with committee assignments. Some committees are more lucrative than others and thus provide better opportunities to fundraise. For example, in measuring committee fundraising quality, @adler2020 estimate that members serving on the House Ways and Means committee are expected to have an 86 percent increase in their total campaign receipts. Similarly, members of the Appropriations and Energy and Commerce committees are expected to see increases of 63 and 46 percent, respectively. In contrast, some committees are actually estimated to hurt a member's campaign contributions [@lee2012]. Moreover, when members transfer to new committees they almost always transfer up to more lucrative committees [@bullock1973]. Moreover, committees are increasingly becoming less important in the policy formation process as party leaders exert more control over the process and increasingly rely on special rules to get legislation passed. Thus, there is very little risk involved with placing members on important committees solely because of their fundraising ability. This makes committees the idea institution to raise money. Members of lucrative committees continue to bring in large sums of money from organizations vying for special access to the legislative process while party leaders still maintain majority control over legislative outcomes. If the most lucrative committees provide the greatest opportunity for members to raise money, then party leaders set on increasing their war chests should place their best fundraisers on these committees.
+
+# Empirical Implications
+
+My argument that party leaders position their party's members in a way to maximize campaign contributions, and that they prioritize fundraising ability over competency, has several testable predictions. First, if fundraising ability has replaced the desire for policy competency, then members should be assigned to committees independent of their legislative capacity. Instead, members placed on the most lucrative committees should be selected for these seats on the basis of how much money they contribute to their party and party's candidates. This leads to my first hypothesis:
+
+**Hypothesis 1:** *Contributions from members to their parties and parties' candidates have a larger effect on getting assigned to a lucrative committee than member competency and seniority.*
+
+Previous research and changes in the congressional landscape over the last couple decades led some support for Hypothesis 1. First, congressional scholars have noted the declining importance of committees in the policymaking process [e.g. @lewallen2020]. Overtime, party leaders have exercised more authority over the actions of Congress by controlling the agenda [@cox2005], using legislative task forces [@oleszek1999], using special rules, and other means to bypass normal committee procedures [@sinclair2017]. When party leaders have ways to accomplish their legislative objectives outside of the committee system, then the competency of individual committee members is much less important. Second, recent work by @adler2020 finds that party leaders are much more likely to place electorally vulnerable freshmen on prestigious committees in order to help them fundraise for their next election. Since freshman are typically not the most capable legislators, this indicates that leaders are willing to risk incompetency on the most important committees in order to increase the chances of maintaining majority control. 
+
+Second, since I argue that party leaders aim to maximize their party's campaign contributions, then assignments to the most lucrative committees should be given to members who raise the most money for their party and party's candidates. Moreover, if party leaders operate with the goal of maximizing fundraising, then members who raise the most money for their party should receive assignments to lucrative committees independently of what committees they request to serve on. This leads to my second hypothesis: 
+
+**Hypothesis 2:** *Independent of the committee requested, members who make more contributions to their parties and parties' candidates are more likely to be assigned to a lucrative committee than members who make fewer contributions.* 
+
+Finally, if party leaders do assign members to lucrative committees according to their fundraising and independent of their preferences, then party contributions should predict assignments to lucrative committees that were not requested. That is, the top fundraisers should get assigned to lucrative committees even when they requested to serve on other non-lucrative committees. Since the list of lucrative committees is composed of the prestige committees, as discussed below, competition for these seats is intense and it is often the most qualified candidates vying for these committees. As a result, getting assigned to one of these committees when it was not requested should be a rare occurrence. There likely exists a correlation between fundraising ability and wanting to serve on a lucrative committee, but it is not a necessary relationship. As @heberlig2012 show in their book, *Congressional Parties, Institutional Ambition, and the Financing of Majority Control* there are quite a few senior members who raise and contribute significant amounts of money to their party but who are not requesting to serve on the lucrative prestige committees. If, however, party leaders want to position their best fundraisers on lucrative committees, then top fundraisers who did not ask for a lucrative committee should get assigned to one anyway. This leads to my final hypothesis: 
+
+**Hypothesis 3:** *Members who get assigned to lucrative committees without requesting them are those that make more contributions to their parties and parties' candidates than members who requested a lucrative committee but were not assigned to one.* 
+
+# Data and Methods
+
+To distinguish between members being rewarded with the committee assignments that they want for their campaign contributions and members being assigned committees despite their preferences, I use the most comprehensive data available on member committee requests [@frisch2006b]. These data provide the committee request preferences for members between the 102nd and 110th Congress and are arguably the most accurate measure of a member's revealed committee assignment preferences. These data allow me to correct for member committee request preferences when using party contributions to estimate assignments to lucrative committees. 
+
+What counts as a lucrative committee? In the past, political scientists have used many different classification schemes to categorize committees, but the focus is usually on identifying prestige, policy, constituent, and service committees. @deering1997, for example, classify the prestige committees as Appropriations, Budget, Rules, and Ways and Means, but @cox1993 only consider Ways and Means, Appropriations, and Rules as prestige committees. In his study investigating the effects of caucus fundraising on committee transfers, @heberlig2003 adds Energy and Commerce for Democrats starting in the 104th Congress to Cox and McCubbins' list of prestige committees. In contrast to these authors, I use the list of prestige, or exclusive, committees defined by Judy Schneider who is a 40 year veteran of the Congressional Research Service and regularly instructs members on the workings of Congress [@gangitano2018].
+
+According to Judy Schneider's review of Democratic and Republican rules, the prestige committees are Appropriations, Ways and Means, Energy and Commerce (starting in the 104th Congress for Democrats), Financial Services (starting in the 109th Congress for Democrats) and Rules. This list of committees is also consistent with the most lucrative committees. In their article investigating the importance of campaign contributions in the committee assignment process, @adler2020 calculate the fundraising value of House committees by estimating how a member's fundraising totals change after gaining or losing a seat on each committee. According to their model, the top five most lucrative committees are Way and Means, Appropriations, Rules, Energy and Commerce, and Financial Services. Thus, these are the committees that I define as lucrative.
+
+For Hypotheses 1 and 2, I use the committee assignment data and list of lucrative committees to create an indicator variable that measures whether a member was assigned to a lucrative committee. Using this variable as my outcome, I test Hypotheses 1 and 2 with a Bayesian multilevel logistic regression where party contributions is my predictor of interest. I also include several control variables. I include indicators for the type of committee requested (either lucrative or policy with constituent as the reference group) in order to account for which committee type a member wanted to serve on. This allows me to narrow in on whether a member was assigned to a lucrative committee that they wanted or not, which is something that previous studies have not taken into account. I include member seniority because seniority has traditionally been one of the most important factors in determining committee assignments [@shepsle1978; @katz1996; @cann2008a; @kellermann2009] and more senior members are typically better at fundraising and thus more likely to  contribut to their party and party's candidates. I include an indicator whether or not a member is a member of the majority party for a given Congress. The majority party gets more committee seats and may be better situated to get their members on important committees. Also, interest groups tend to favor majority party members because they have more influence over the legislative agenda meaning that majority members receive more in campaign contributions. I also include a member's legislative effectiveness score (LES) lagged by one congressional session, because party leaders may want more productive members to sit on lucrative committees and more effective members may also attract more campaign contributions. Seniority, majority status, and legislator effectiveness data all come from @volden2014. Finally, I include each member's margin of victory in the last election. The committee assignment literature has argued, with mixed empirical evidence, that more vulnerable members may be given better committee assignments to improve their reelection prospects [@masters1961; @clapp1964; @frisch2006a]. Members with a large margin of victory may also have more money on hand to give to their party and party's candidates. The margin of victory is computed with data from the [MIT Election Data + Science Lab](https://electionlab.mit.edu/data). Finally, because the outcome variable is binary, I center all predictor variables and divide by two standard deviations. This helps with interpreting the coefficients by placing them on the same scale as the outcomes [@gelman2020], and enables comparisons of the size of each coefficient. Standardizing in this way changes the interpretation of each predictor to be a 1-unit change corresponding to a change from 1 standard deviation below the mean, to 1 standard deviation above the mean.
+
+In addition to these controls, I also include intercepts (random effects) for states, Congress, and members. However, instead of estimating the state and Congress effects as independent of one another, I nest them to allow for correlation between them. This is theoretically justified because the steering committees responsible for making committee assignments consider the geographical representation of members when making assignments, which varies from Congress to Congress. Said differently, the effect of which state you represent with your committee assignments is not constant over time. Thus, treating time effects as constant across states yields an unrealistic model. Nesting these intercepts allows them to vary across states and across time within states. I do, however, assume that the effects of each member are constant across both time and space and therefore estimate the member intercepts as independent of the nested state and Congress intercepts.
+
+To test Hypothesis 3, I use the committee request data from @frisch2006b and assignment data from @stewart2017 along with the list of lucrative committees from @adler2020 to create 4 categories of members: members who requested a lucrative committee but did not receive one, members who did not request a lucrative committee but received one, members who did not request a lucrative committee and did not receive one, and members who requested a lucrative committee and received one. Thus, this variable classifies members according to their ultimate committee assignments as well as their committee requests to help measure whether members are being rewarded for their contributions with the committees that they want or being assigned to committees because of their contributions. To model these lucrative assignment categories and test Hypothesis 3, I use a Bayesian multinomial logistic regression where, like before, I include nested random effects for states and Congress along with crossed, or unnested, random effects for members. In this model, party contributions is my predictor of interest and I include controls for member seniority, being a member of the majority party, a member's legislator effectiveness score (lagged by one congressional session), and a member's margin of victory in the last election.
+
+```{r Assignment Percentages}
+assignment.groups <- 
+  estimation.data %>% 
+  group_by(lucrative_pattern_f) %>% 
+  summarise(n = n()) %>% 
+  mutate(pct = round(n/sum(n) * 100, 0)) %>% 
+  select(lucrative_pattern_f, pct)
+```
+
+Figure \@ref(fig:luc-contribs) visualizes this categorical variable by showing the contributions made by members to their party and party's candidates in the election cycle leading up to a given session of Congress per committee assignment. Considering the competitiveness of getting on a prestige committee, it is striking that `r assignment.groups[[1, 2]]` percent of the `r table(estimation.data$lucrative_pattern_f)[["luc_not_req"]] + table(estimation.data$lucrative_pattern_f)[["luc_req"]]` members who were assigned to one did not request it. It is clear that both members who requested a lucrative committee and were assigned to one along with members who did not request a lucrative committee but were assigned to one anyway made more contributions to their party than members who were not assigned to a lucrative committee and that this trend is consistent across the two parties. 
+
+```{r luc-contribs, fig.align = "center", fig.dim = c(10, 5), fig.cap = "Member Contributions and  Lucrative Assignment Categories. Campaign contribution data comes from [OpenSecrets.org](https://www.opensecrets.org)."}
+estimation.data %>% 
+  mutate(lucrative_pattern_f = factor(lucrative_pattern_f, 
+                                      levels = c("no_luc_req", 
+                                                 "no_luc",
+                                                 "luc_not_req",
+                                                 "luc_req"),
+                                      labels = c("Requested Lucrative - Not Assigned (n = 259)", 
+                                                 "Did Not Request Lucrative - Not Assigned (n = 233)",
+                                                 "Did Not Request Lucrative - Assigned (n = 125)",
+                                                 "Requested Lucrative - Assigned (n = 315)"))) %>% 
+  group_by(lucrative_pattern_f, rep) %>% 
+  summarise(n = n(),
+            contribs = sum(party_contribs),
+            per_contribs = contribs / n) %>% 
+  ggplot(data = ., aes(x = lucrative_pattern_f, y = per_contribs, fill = rep)) +
+  geom_col(position = position_dodge()) +
+  scale_x_discrete(labels = label_wrap(20)) +
+  scale_y_continuous(labels = dollar_format()) +
+  labs(x = "", y = "Contributions Per Assignment",
+       fill = "") +
+  scale_fill_grey() +
+  theme_pubclean()
+```
+
+The independent variable of interest for both models is the total amount of money a member gave to their party's congressional campaign committee and fellow candidates in the cycle leading up to a given Congress. All models are estimated within a Bayesian framework to quantify the uncertainty of each estimate in a probabilistic fashion and to avoid relying on Null Hypothesis Significance Testing to make inferences. Additionally, all models use weakly informative, normally distributed, priors of mean 0 and standard deviation of 4. for all intercept and slope parameters. Although a normally distributed prior with a mean of 0 and standard deviation of 4 would usually be informative, this is not the case when using a logit link function. On the logit scale, the prior has a mean of $\text{logistic}(0) =$ `r plogis(0)` and a standard deviation of $\text{logistic}(4) =$ `r round(plogis(4), digits = 2)`. Thus, on the probability scale these priors are quite weak.^[See the appendix [Analysis of Priors] for a visualization of the influence of my prior selections and the appendix [Estimation with Informative Priors] for a discussion on how the results change when incorporating findings from previous research.] Each model is estimated in Stan with four chains, each run for 4,000 iterations, and a warmup period of 2,000 iterations. The convergence of each model is verified with a visual inspection of the trace-plots and each parameter’s $\hat{R}$ value being less than 1.01.^[Adapt delta values were adjusted to $0.99$ for some models to prevent divergent transitions.] Finally, because each party has their own committee assignment process and because previous research has documented differences in this process across parties [@frisch2006b], I estimate separate models for each party.  
+
+
+# Results
+
+```{r Load Model Results}
+# Democrats -------------------------------------------------------------------
+## Hypotheses 1 & 2
+p_load(broom.mixed, printy, glue, emmeans, ggthemes)
+load(file = "Models/dem_luc_fit1.Rda")
+load(file = "Models/dem_luc_fit2.Rda")
+
+dem.luc.results <- 
+  tidy(dem.luc.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+dem.luc.stats <- 
+  dem.luc.results %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+
+# Hypothesis 3
+load(file = "Models/dem_luc_asgmt_fit1.Rda")
+load(file = "Models/dem_luc_asgmt_fit2.Rda")
+dem.cat.results <- 
+  tidy(dem.luc.asgmt.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+dem.cat.stats <- 
+  dem.cat.results %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+
+# Republicans -----------------------------------------------------------------
+# Hypotheses 1 & 2
+load(file = "Models/rep_luc_fit1.Rda")
+load(file = "Models/rep_luc_fit2.Rda")
+
+rep.luc.results <- 
+  tidy(rep.luc.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+rep.luc.stats <- 
+  rep.luc.results %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+
+# Hypothesis 3
+load(file = "Models/rep_luc_asgmt_fit1.Rda")
+load(file = "Models/rep_luc_asgmt_fit2.Rda")
+rep.cat.results <- 
+  tidy(rep.luc.asgmt.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+rep.cat.stats <- 
+  rep.cat.results %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+```
+
+Figure \@ref(fig:h1-results) displays the population-level estimates from the multilevel models testing Hypotheses 1 and 2. Evaluating the evidence for Hypothesis 1, that party contributions will have a larger effect on getting assigned to a lucrative committee than member competency and seniority, first, we see that for both Democrats and Republicans party contributions has a larger effect than seniority and legislator effectiveness. This figure also shows that party contributions are estimated to increase in the probability of being assigned to a lucrative committee after controlling for the type of committee requested by each member. This result lends support for Hypothesis 2, that members who make larger contributions to their party and party's candidates are more likely to be assigned to a lucrative committee independent of which committees they request to serve on. Specifically, for a Democrat who increases their party contributions from 1 standard deviation below the mean to 1 standard deviation above the mean, the model predicts a `r dem.luc.stats$party_contribs_2z$prob_est` percent increase in the relative probability of being assigned to a lucrative committee (median log-odds point estimate of `r dem.luc.stats$party_contribs_2z$estimate`, 95\% highest density interval `r dem.luc.stats$party_contribs_2z$ci`). With an intercept log-odds estimate of `r dem.luc.stats$intercept$estimate`, the increase in the absolute probability of receiving a lucrative committee assignment for a unit increase in party contributions is roughly `r round(plogis(as.numeric(dem.luc.stats$intercept$estimate) + as.numeric(dem.luc.stats$party_contribs_2z$estimate)) - plogis(as.numeric(dem.luc.stats$intercept$estimate)), 2) * 100` percent. 
+
+These results also hold for Republicans. For a Republican who increases their party contributions from 1 standard deviation below the mean to 1 standard deviation above the mean, the model predicts a `r rep.luc.stats$party_contribs_2z$prob_est` percent increase in the relative probability of being assigned to a lucrative committee (median log-odds point estimate of `r rep.luc.stats$party_contribs_2z$estimate`, 95\% highest density interval `r rep.luc.stats$party_contribs_2z$ci`). Compared to Democrats, the increase in the absolute probability of receiving a lucrative committee assignment is slightly lower, but still large, with an estimate of about `r round(plogis(as.numeric(rep.luc.stats$intercept$estimate) + as.numeric(rep.luc.stats$party_contribs_2z$estimate)) - plogis(as.numeric(rep.luc.stats$intercept$estimate)), 2) * 100` percent.
+
+```{r h1-results, fig.align = "center", fig.dim = c(10, 5), fig.cap = "Coefficient estimates for models predicting lucrative committee assignments. The point represents the median point estimate and the thin and thick lines represent the 90 and 95 percent highest density intervals, respectively. The dots show 50 equally likely point estimates to help with understanding the probability of each coefficient estimate."}
+# Hypothesis 1: More money, better chances of lucrative assignment
+dem.luc.plot <- 
+  dem.luc.fit2 %>% 
+  spread_draws(b_Intercept, b_party_contribs_2z, b_seniority_2z, b_lagged_les_2z, 
+               b_vote_margin_2z, b_policy_req_2z, b_luc_request_2z,
+               b_majority_member_2z) %>% 
+  pivot_longer(cols = b_Intercept:b_majority_member_2z,
+               names_to = "parameter", values_to = "estimate") %>% 
+  group_by(parameter) %>% 
+  ggplot(aes(x = estimate, y = reorder(parameter, estimate))) +
+  stat_dotsinterval(quantiles = 50, point_interval = "median_hdi", 
+                    .width = c(0.9, 0.95), slab_fill = "grey85", 
+                    slab_color = "grey85") +
+  labs(x = "Coefficient Estimate (Log-Odds)", 
+       y = "Predictor",
+       title = "Democratic Assignments") +
+  scale_y_discrete(labels = c("Intercept",
+                              "Lagged LES",
+                              "Vote Margin",
+                              "Majority Member",
+                              "Policy Request",
+                              "Seniority",
+                              "Party Contribs.",
+                              "Lucrative Request")) +
+  scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8), limits = c(-2, 8)) +
+  theme_minimal()
+
+rep.luc.plot <- 
+  rep.luc.fit2 %>% 
+  spread_draws(b_Intercept, b_party_contribs_2z, b_seniority_2z, 
+               b_lagged_les_2z, b_vote_margin_2z, b_policy_req_2z, 
+               b_luc_request_2z, b_majority_member_2z) %>% 
+  pivot_longer(cols = b_Intercept:b_majority_member_2z,
+               names_to = "parameter", values_to = "estimate") %>% 
+  mutate(parameter = factor(parameter,
+                            levels = c("b_Intercept",
+                                       "b_lagged_les_2z",
+                                       "b_vote_margin_2z",
+                                       "b_majority_member_2z",
+                                       "b_policy_req_2z",
+                                       "b_seniority_2z",
+                                       "b_party_contribs_2z",
+                                       "b_luc_request_2z"))) %>% 
+  group_by(parameter) %>% 
+  ggplot(aes(x = estimate, y = parameter)) +
+  stat_dotsinterval(quantiles = 50, point_interval = "median_hdi", 
+                    .width = c(0.9, 0.95), slab_fill = "grey85", 
+                    slab_color = "grey85") +
+  labs(x = "Coefficient Estimate (Log-Odds)", 
+       y = "",
+       title = "Republican Assignments") +
+  scale_x_continuous(breaks = c(-2, 0, 2, 4, 6, 8), limits = c(-2, 8)) +
+  theme_minimal()
+
+(dem.luc.plot | rep.luc.plot + theme(axis.text.y = element_blank()))
+```
+
+```{r Average Marginal Effects Estimates}
+# Democrats -------------------------------------------------------------------
+grand.mean.dem <- 
+  dem.luc.fit2 %>% 
+  epred_draws(newdata = expand_grid(party_contribs_2z = c(-1, -0.5, 0, 0.5, 1),
+                                    luc_request_2z = 0,
+                                    seniority_2z = 0,
+                                    policy_req_2z = 0,
+                                    majority_member_2z = 0,
+                                    vote_margin_2z = 0,
+                                    lagged_les_2z = 0), 
+              re_formula = NA)
+
+tidy.grand.mean.dem <- 
+  grand.mean.dem %>% 
+  median_hdi() %>% 
+  pivot_longer(cols = party_contribs_2z:lagged_les_2z, 
+               names_to = "terms",
+               values_to = "est") %>% 
+  mutate(across(c(.epred, .lower, .upper), printy::fmt_fix_digits, 2),
+         prob_est = as.numeric(.epred) * 100,
+         # use a minus sign instead of a hyphen for negative numbers
+         #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+         ci = glue::glue("[{.lower}, {.upper}]")) %>% 
+  filter(est == -0.5 | est == 0.5) %>% 
+  mutate(terms = ifelse(est == -0.5, "party_contribs_low", "party_contribs_high"))
+  
+tidy.grand.mean.dem <- 
+  tidy.grand.mean.dem %>% 
+  split(.$terms)
+  
+# Republicans -----------------------------------------------------------------
+grand.mean.rep <- 
+  rep.luc.fit2 %>% 
+  epred_draws(newdata = expand_grid(party_contribs_2z = c(-1, -0.5, 0, 0.5, 1),
+                                    luc_request_2z = 0,
+                                    seniority_2z = 0,
+                                    policy_req_2z = 0,
+                                    majority_member_2z = 0,
+                                    vote_margin_2z = 0,
+                                    lagged_les_2z = 0), 
+              re_formula = NA)
+
+tidy.grand.mean.rep <- 
+  grand.mean.rep %>% 
+  median_hdi() %>% 
+  pivot_longer(cols = party_contribs_2z:lagged_les_2z, 
+               names_to = "terms",
+               values_to = "est") %>% 
+  mutate(across(c(.epred, .lower, .upper), printy::fmt_fix_digits, 2),
+         prob_est = as.numeric(.epred) * 100,
+         # use a minus sign instead of a hyphen for negative numbers
+         #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+         ci = glue::glue("[{.lower}, {.upper}]")) %>% 
+  filter(est == -0.5 | est == 0.5) %>% 
+  mutate(terms = ifelse(est == -0.5, "party_contribs_low", "party_contribs_high"))
+  
+tidy.grand.mean.rep <- 
+  tidy.grand.mean.rep %>% 
+  split(.$terms)
+```
+
+```{r ame-plot, fig.align = "center", fig.dim = c(10, 4), fig.cap = "Party Contributions and Lucrative Assignment Category.", include = FALSE}
+p_load(ggokabeito)
+# Democrats -------------------------------------------------------------------
+# Posterior predictions across party contributions
+grand.mean.dem.plot <- 
+  ggplot(grand.mean.dem, aes(x = party_contribs_2z, y = .epred)) +
+  stat_lineribbon() +
+  scale_fill_brewer(palette = "Greys") +
+  scale_x_continuous(labels = c("Mean - 2 S.D.", "Mean - 1 S.D.",
+                                "Mean", "Mean + 1 S.D.", "Mean + 2 S.D.")) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(x = "Party Contributions", y = "Predicted Probability",
+       fill = "Credible interval",
+       title = "Democratic Assignments") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Republicans -----------------------------------------------------------------
+# Posterior predictions across party contributions
+grand.mean.rep.plot <- 
+  ggplot(grand.mean.rep, aes(x = party_contribs_2z, y = .epred)) +
+  stat_lineribbon() +
+  scale_fill_brewer(palette = "Greys") +
+  scale_x_continuous(labels = c("Mean - 2 S.D.", "Mean - 1 S.D.",
+                                "Mean", "Mean + 1 S.D.", "Mean + 2 S.D.")) +
+  scale_y_continuous(labels = percent_format()) +
+  labs(x = "Party Contributions", y = "",
+       fill = "Credible Interval", 
+       title = "Republican Assignments") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+# Combined plot
+(grand.mean.dem.plot | grand.mean.rep.plot + theme(axis.text.y = element_blank()))
+```
+
+These results show that, when holding a member's committee request preferences constant, members who make larger contributions to their party and party's candidates are more likely to be assigned to lucrative committee than members who make smaller contributions, but do party contributions predict unrequested lucrative assignments? The results presented in Figure \@ref(fig:h3-results) address this question. By dividing lucrative into 4 categories, these models test Hypothesis 3, that members who get assigned to lucrative committees without requesting them are those that make more contributions to their parties and parties' candidates than members who requested a lucrative committee but were not assigned to one. 
+
+Starting with the "No Request-Not Assigned" category, the model predicts that as party contributions increase, the likelihood of being a member that did not request a seat on a lucrative committee and was not assigned to one compared with a member who requested a lucrative committee but was not assigned to one, decreases. In other words, when comparing the two groups of members who were *not assigned* to lucrative committees, the members who gave more money to their parties and parties' candidates have a higher probability of being in the group that requested a lucrative committee than being in the group that did not request a lucrative committee. Indeed, this is consistent with the argument that members have responded to the demands of their party leaders for more money by giving more money to get better committee assignments. Looking next at the category "Requested-Assigned", we see that when comparing the two groups of members that requested lucrative committee assignments, the ones that received an assignment where those that gave more money to their party and party's candidates. That is, among members who want a lucrative committee assignment, contributing more money to the party's fundraising efforts increases the chances of getting assigned to a lucrative committee.   
+
+The final outcome category, "No Request-Assigned," provides the best test of Hypothesis 3. This category compares the effects of party contributions among members who received an assignment to a lucrative committee, but may or may not have requested such a seat. For Democrats and Republicans, an increase in party contributions has a positive effect of being in the group that gets assigned to a lucrative committee without requesting one when compared to the group that requests a lucrative committee but is not assigned to one. This provides evidence that party leaders assign good fundraisers to lucrative committees whether they want to serve on one or not. These are the members that go where they are told rather than get what they want. 
+
+Although the coefficient estimates are positive in both models, some readers more familiar with the frequentist approach to statistics may question the statistical significance of the effect of party contributions for the "No Request-Assigned" category in the Republican model because the 90 and 95 percent highest density intervals cross 0. There is an important caveat to make about this observation, however. Unlike frequentist methods, Bayesian methods allow for the intuitive probabilistic interpretation of uncertainty intervals. So, for example, a 90 percent highest density interval shows the range of values for a particular estimate that have a 90 percent probability of containing the true value. This has the advantage of limiting the need for arbitrary cut-off points (like 95 percent) that are typically employed in Null Hypothesis Significance Testing. Instead researchers can make inferences about the direct probability of a coefficient estimate. The dots above the interval help with making this inference. To help with understanding the probability of coefficient estimates, @kay2016 and @fernandes2018 suggest using what they call quantile dotplots. These dotplot divide the posterior estimates into an arbitrary number of bins of approximately equally likely points. So, Figure \@ref(fig:h3-results) shows 50 equally likely estimates to summarize the marginal posterior distributions for each coefficient. Counting the dots to the right of the 0 mark for the "No Request-Assigned" category shows that the probability of a positive effect for this estimate is about `r round(sum(as.data.frame(rep.luc.asgmt.fit2)$b_mulucnotreq_party_contribs_2z > 0) / nrow(as.data.frame(rep.luc.asgmt.fit2)), 2) * 100` percent. Although this misses the conventional cut-off of 95 percent, an `r round(sum(as.data.frame(rep.luc.asgmt.fit2)$b_mulucnotreq_party_contribs_2z > 0) / nrow(as.data.frame(rep.luc.asgmt.fit2)), 2) * 100` percent probability is still reasonably good indication of an effect, and under the frequentist framework we would need to conduct a Null Hypothesis Significance Test to determine if this probability is significantly different from the 90 or 95 percent cut-off. Still, it is clear that the probability that party contributions have a positive effect on getting a lucrative committee assignment when it was not requested is much higher for Democrats than it is Republicans.
+
+```{r h3-results, fig.align = "center", fig.dim = c(10, 4), fig.cap = "Coefficient estimates for models predicting committee assignment categories. The point represents the median point estimate and the thin and thick lines represent the 90 and 95 percent highest density intervals, respectively. The dots show 50 equally likely point estimates to help with understanding the probability of each coefficient estimate. Controls are included in the estimatation but omitted from the table."}
+# Democrats -------------------------------------------------------------------
+dem.cat.plot <- 
+  dem.luc.asgmt.fit2 %>% 
+  spread_draws(b_munoluc_party_contribs_2z, b_mulucnotreq_party_contribs_2z,
+               b_mulucreq_party_contribs_2z) %>% 
+  pivot_longer(cols = b_munoluc_party_contribs_2z:b_mulucreq_party_contribs_2z,
+               names_to = "parameter", values_to = "estimate") %>% 
+  mutate(group = case_when(str_detect(parameter, "noluc") ~ "No Request-Not Assigned",
+                           str_detect(parameter, "lucreq") ~ "Requested-Assigned",
+                           str_detect(parameter, "lucnotreq") ~ "No Request-Assigned")) %>% 
+  group_by(parameter, group) %>% 
+  #median_hdi(.width = c(0.95)) %>% 
+  ungroup() %>%
+  arrange(group, estimate) %>% 
+  #mutate(parameter = factor(parameter, levels = parameter)) %>% 
+  ggplot(aes(x = estimate, y = parameter)) +
+  stat_dotsinterval(quantiles = 50, point_interval = "median_hdi", 
+                    .width = c(0.9, 0.95), slab_fill = "grey85", 
+                    slab_color = "grey85") +
+  labs(x = "Party Contributions Coefficient Estimate (Log-Odds)",  
+       y = "Outcome Category", 
+       title = "Democratic Assignments") +
+  scale_y_discrete(labels = c("No Request-Assigned", "Requested-Assigned",
+                              "No Request-Not Assigned")) +
+  scale_x_continuous(limits = c(-6, 6), breaks = c(-6, -4, -2, 0, 2, 4, 6)) +
+  scale_color_grey() +
+  theme_minimal()
+
+# Republicans -----------------------------------------------------------------
+rep.cat.plot <- 
+  rep.luc.asgmt.fit2 %>% 
+  spread_draws(b_munoluc_party_contribs_2z, b_mulucnotreq_party_contribs_2z,
+               b_mulucreq_party_contribs_2z) %>% 
+  pivot_longer(cols = b_munoluc_party_contribs_2z:b_mulucreq_party_contribs_2z,
+               names_to = "parameter", values_to = "estimate") %>% 
+  mutate(group = case_when(str_detect(parameter, "noluc") ~ "No Request-Not Assigned",
+                           str_detect(parameter, "lucreq") ~ "Requested-Assigned",
+                           str_detect(parameter, "lucnotreq") ~ "No Request-Assigned")) %>% 
+  group_by(parameter, group) %>% 
+  #median_hdi(.width = c(0.95)) %>% 
+  ungroup() %>%
+  arrange(group, estimate) %>% 
+  #mutate(parameter = factor(parameter, levels = parameter)) %>% 
+  ggplot(aes(x = estimate, y = parameter)) +
+  stat_dotsinterval(quantiles = 50, point_interval = "median_hdi", 
+                    .width = c(0.9, 0.95), slab_fill = "grey85", 
+                    slab_color = "grey85") +
+  labs(x = "Party Contribs. Coefficient Estimate (Log-Odds)",  
+       y = "", 
+       caption = "Reference Group: Requested Lucrative - Not Assigned",
+       title = "Republicans Assignments") +
+  scale_y_discrete(labels = c("No Request-Assigned", "Requested-Assigned",
+                              "No Request-Not Assigned")) +
+  scale_x_continuous(limits = c(-6, 6), 
+                     breaks = c(-6, -4, -2, 0, 2, 4, 6)) +
+  scale_color_grey() +
+  theme_minimal()
+
+(dem.cat.plot | rep.cat.plot + theme(axis.text.y = element_blank()))
+```
+
+
+# Conclusion
+
+Fundraising is an increasingly important aspect of congressional campaigns and one that is fueled by the strategies that party leaders have developed to pressure their members into raising money, but are member's fundraising efforts rewarded or exploited? Are they more or less important than legislative competency and seniority? This article leverages novel data on committee requests to show that when making assignments to the committees that matter most for fundraising, party leaders exploit strong fundraisers by assigning them to these committees despite their preferences and that fundraising ability plays a larger role in predicting lucrative committee assignments than legislative ability and seniority. 
+
+These findings contribute 
+
+(results matter for committee assignment lit, representation on committees, influence of money in the policymaking process, how caucus fundraising influences committee assignments)
+
+
+# References
+
+<div id="refs"></div>
+
+# Appendix {-}
+
+## Results Tables
+
+Table \@ref(tab:results-tbl1) shows the results of the models testing Hypotheses 1 and 2. The estimates are reasonably consistent across specifications. The random effects estimates show that there is a significant amount of variation in receiving a lucrative committee assignment across members, states, and states over time. The variation between members suggests that there are individual characteristics of members that play a role in making assignments to lucrative committees and the variation across states and time is consistent with what we know about the efforts of steering committees to balance geographic representation and that these concerns change over time. Finally, all measures of out-of-sample predictive power (ELPD, LOOIC, and WAIC) indicate that the models with control variables provide the best predictions. 
+
+```{r results-tbl1}
+p_load(modelsummary, kableExtra)
+
+glance_custom.brmsfit <- function(x, ...) {
+  s <- summary(x)
+  out <- data.frame(state_grps = s$ngrps$state,
+                    state_congress_grps = s$ngrps$`state:congress`,
+                    icpsr_grps = s$ngrps$icpsr)
+  out
+}
+
+gm <- list(
+  list(raw = "nobs", clean = "N (Total)", fmt = 0),
+  list(raw = "state_grps", clean = "N (States)", fmt = 0),
+  list(raw = "state_congress_grps", clean = "N (State:Congress)", fmt = 0),
+  list(raw = "icpsr_grps", clean = "N (Members)", fmt = 0),
+  list(raw = "elpd", clean = "ELPD", fmt = 0),
+  list(raw = "looic", clean = "LOOIC", fmt = 0),
+  list(raw = "waic", clean = "WAIC", fmt = 0)
+)
+
+table1 <- 
+  modelsummary(list(dem.luc.fit1, dem.luc.fit2, rep.luc.fit1, rep.luc.fit2),
+               output = "modelsummary_list",
+               fmt = 2,
+               statistic = "conf.int",
+               conf_level = 0.95)
+
+## GET HELP TO CLEAN THIS CODE ##
+table1$`Model 1`$tidy <- 
+  table1$`Model 1`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+table1$`Model 2`$tidy <- 
+  table1$`Model 2`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+table1$`Model 3`$tidy <- 
+  table1$`Model 3`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+table1$`Model 4`$tidy <- 
+  table1$`Model 4`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+modelsummary(table1, 
+             group = term + group ~ model,
+             coef_map = c("party_contribs_2z" = "Party Contribs.", 
+                          "lagged_les_2z" = "Lagged LES", 
+                          "vote_margin_2z" = "Vote Margin", 
+                          "seniority_2z" = "Seniority", 
+                          "luc_request_2z" = "Lucrative Cmte. Request", 
+                          "policy_req_2z" = "Policy Cmte. Request", 
+                          "majority_member_2z" = "Majority Member", 
+                          "(Intercept)" = "Intercept",
+                          "sd__(Intercept)" = "Random Effects"),
+             fmt = 2,
+             statistic = "conf.int",
+             conf_level = 0.95,
+             gof_map = gm,
+             title = "Member Contributions and Assignments to Lucrative Committee")  %>% 
+  add_header_above(c(" " = 2, "Democrats" = 2, "Republicans" = 2)) %>% 
+  footnote("Models are estimated using multilevel logistic regression and weakly informative priors. All models are estimated with Stan via BRMS with four Markov chain Monte Carlo (MCMC) chains. All chains indicate convergence with every R value being less than 1.01.", 
+           threeparttable = T,
+           fixed_small_size = TRUE) %>% 
+  kable_styling(latex_options = "scale_down")
+```
+
+Table \@ref(tab:results-tbl2) shows the results of the models testing Hypothesis 3 where the coefficient estimates are grouped by the outcome category. Members who were not assigned to a lucrative committee despite having requested one serve as the reference group. For Democrats and Republicans, across all specifications, members who give more money to their party and party's candidates are estimated to be slightly less likely to be in the group of members that does not ask for a lucrative committee and does not get one ("No Asgmt. - Not Requested") than the group that asks for lucrative committee and does not get one. This effect, however, is more likely for Democrats than Republicans. In other words, members who ask for lucrative committees typically give more money to their parties and parties' candidates. The coefficient estimates for party contributions in the next outcome category ("Luc. Asgmt. - Not Requested") show that members who give more money to their party have a higher probability of being in the group of members that was assigned to a lucrative committee despite not having requested one, compared to members who requested a lucrative committee but were not assigned to one. For the final category, we see that members who give more money to their party have a much higher probability of being in the group of members that asks for a lucrative committee and gets one, compared to the group that asks for one but does not get one. As with the previous logistic regressions, the measures of predictive power for these models prefer the specifications with controls.    
+
+```{r results-tbl2, echo = FALSE}
+p_load(modelsummary, kableExtra)
+
+glance_custom.brmsfit <- function(x, ...) {
+  s <- summary(x)
+  out <- data.frame(state_grps = s$ngrps$state,
+                    state_congress_grps = s$ngrps$`state:congress`,
+                    icpsr_grps = s$ngrps$icpsr)
+  out
+}
+
+gm <- list(
+  list(raw = "nobs", clean = "N (Total)", fmt = 0),
+  list(raw = "state_grps", clean = "N (States)", fmt = 0),
+  list(raw = "state_congress_grps", clean = "N (State:Congress)", fmt = 0),
+  list(raw = "icpsr_grps", clean = "N (Members)", fmt = 0),
+  list(raw = "elpd", clean = "ELPD", fmt = 0),
+  list(raw = "looic", clean = "LOOIC", fmt = 0),
+  list(raw = "waic", clean = "WAIC", fmt = 0)
+)
+
+table2 <- 
+  modelsummary(list(dem.luc.asgmt.fit1, dem.luc.asgmt.fit2, rep.luc.asgmt.fit1, 
+                    rep.luc.asgmt.fit2), 
+               output = "modelsummary_list",
+               fmt = 2,
+               statistic = "conf.int",
+               conf_level = 0.95,
+               gof_map = gm)
+
+table2$`Model 1`$tidy <- 
+  table2$`Model 1`$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+table2$`Model 2`$tidy <- 
+  table2$`Model 2`$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+table2$`Model 3`$tidy <- 
+  table2$`Model 3`$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+table2$`Model 4`$tidy <- 
+  table2$`Model 4`$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+rows <- tribble(~ group, ~ term, ~ `Model 1`, ~ `Model 2`, ~ `Model 3`, ~ `Model 4`,
+                "Reference: No Luc. Asgmt. - Requested", "", "", "", "", "",
+                "Outcome Category:", "", "", "", "", "")
+attr(rows, 'position') <- c(1, 0)
+
+modelsummary(table2, 
+             group = group + term ~ model,
+             coef_map = c("munoluc_party_contribs_2z" = "Party Contribs.",
+                          "mulucnotreq_party_contribs_2z" = "Party Contribs.",
+                          "mulucreq_party_contribs_2z" = "Party Contribs.",
+                          "munoluc_seniority_2z" = "Seniority",
+                          "munoluc_lagged_les_2z" = "Lagged LES",
+                          "munoluc_vote_margin_2z" = "Vote Margin",
+                          "munoluc_majority_member_2z" = "Majority Member",
+                          "mulucnotreq_seniority_2z" = "Seniority",
+                          "mulucnotreq_lagged_les_2z" = "Lagged LES",
+                          "mulucnotreq_vote_margin_2z" = "Vote Margin",
+                          "mulucnotreq_majority_member_2z" = "Majority Member",
+                          "mulucreq_seniority_2z" = "Seniority",
+                          "mulucreq_lagged_les_2z" = "Lagged LES",
+                          "mulucreq_vote_margin_2z" = "Vote Margin",
+                          "mulucreq_majority_member_2z" = "Majority Member",
+                          "munoluc_(Intercept)" = "Intercept",
+                          "mulucnotreq_(Intercept)" = "Intercept",
+                          "mulucreq_(Intercept)" = "Intercept"),
+             fmt = 2,
+             statistic = "conf.int",
+             conf_level = 0.95,
+             gof_map = gm,
+             add_rows = rows,
+             title = "Member Contributions and Committee Assignment Type")  %>% 
+  add_header_above(c(" " = 2, "Democrats" = 2, "Republicans" = 2)) %>% 
+  row_spec(1, bold = TRUE) %>% 
+  footnote("Models are estimated using multileve multinomial logistic regression and weakly informative priors. Random effects components are excluded from the table for simplicity. The included random effects components are intercepts for individual members, and state intercepts nested within Congresses. All models are estimated with Stan via BRMS with four Markov chain Monte Carlo (MCMC) chains. All chains indicate convergence with every R value being less than 1.01.", 
+           threeparttable = T,
+           fixed_small_size = TRUE) %>% 
+  kable_styling(latex_options = "scale_down")
+```
+
+## Analysis of Priors
+
+### Priors for Logistic Regression Models
+
+Figure \@ref(fig:logit-prior-analysis) compares the priors for each coefficient in the logistic regression models testing Hypotheses 1 and 2 with the posterior estimates for each coefficient in these models. The prior distribution covers the majority of the mass for each posterior distribution which indicates a limited influence of the prior on the posterior.
+
+```{r logit-prior-analysis, fig.dim = c(10, 5), fig.align = "center", fig.cap = "Analysis of Prior Influence on Coefficient Estimates. This figure show the difference between the prior and posterior estimates. Larger distances between these estimates entail a greater influence of the prior on the posterior estimate."}
+dem.priors <- 
+  simulate_prior(dem.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+dem.posteriors <- 
+  posterior_samples(dem.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+dem.prior.check <- bind_rows(dem.priors, dem.posteriors)
+
+dem.prior.plot <- 
+  ggplot(data = dem.prior.check, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  stat_halfeye(normalize = "groups") +
+  scale_x_continuous(limits = c(-10, 10), breaks = pretty_breaks(n = 10)) +
+  scale_y_discrete(labels = c("Intercept", "Lagged LES", "Lucrative Request",
+                              "Majority Member", "Party Contributions",
+                              "Policy Request", "Seniority", "Vote Margin")) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Democratic Logistic Model",
+       x = "Log-odds Coefficient Estimate",
+       y = "Predictor",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# Republicans -----------------------------------------------------------------
+rep.priors <- 
+  simulate_prior(rep.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+rep.posteriors <- 
+  posterior_samples(rep.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+rep.prior.check <- bind_rows(rep.priors, rep.posteriors)
+
+rep.prior.plot <- 
+  ggplot(data = rep.prior.check, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  stat_halfeye(normalize = "groups") +
+  scale_x_continuous(limits = c(-10, 10), breaks = pretty_breaks(n = 10)) +
+  scale_y_discrete(labels = c("Intercept", "Lagged LES", "Lucrative Request",
+                              "Majority Member", "Party Contributions",
+                              "Policy Request", "Seniority", "Vote Margin")) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Republican Logistic Model",
+       x = "Log-odds Coefficient Estimate",
+       y = "",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+(dem.prior.plot | rep.prior.plot + theme(axis.text.y = element_blank()))
+```
+
+### Priors for Multinomial Logistic Regression Models
+
+Figure \@ref(fig:mlogit-prior-analysis) compares the priors for each coefficient in the multinomial logistic regression models testing Hypothesis 3 with the posterior estimates for each coefficient in these models. As before, the prior distribution covers the majority of the mass for each posterior distribution which indicates a limited influence of the prior on the posterior.
+
+```{r mlogit-prior-analysis, fig.dim = c(12, 5), fig.align = "center", fig.cap = "Analysis of Prior Influence on Coefficient Estimates. This figure show the difference between the prior and posterior estimates. Larger distances between these estimates entail a greater influence of the prior on the posterior estimate."}
+dem.priors2 <- 
+  simulate_prior(dem.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+dem.posteriors2 <- 
+  posterior_samples(dem.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+dem.prior.check2 <- 
+  bind_rows(dem.priors2, dem.posteriors2) %>% 
+  mutate(cat = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt.-Not Requested",
+                         str_detect(term, "munoluc") ~ "No Asgmt.-Not Requested",
+                         str_detect(term, "lucreq") ~ "Luc. Asgmt.-Requested"),
+         term = case_when(str_detect(term, "party_contribs") ~ "Party Contribs.",
+                          str_detect(term, "seniority") ~ "Seniority",
+                          str_detect(term, "lagged_les") ~ "Lagged LES",
+                          str_detect(term, "vote_margin") ~ "Vote Margin",
+                          str_detect(term, "majority_member") ~ "Majority Member",
+                          str_detect(term, "Intercept") ~ "Intercept"))
+
+dem.prior.plot2 <- 
+  ggplot(data = dem.prior.check2, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  facet_wrap(~ cat) +
+  stat_halfeye(normalize = "groups") +
+  scale_x_continuous(limits = c(-10, 10), breaks = pretty_breaks(n = 10)) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Democratic Multinomial Logit Models",
+       x = "Log-odds Coefficient Estimate",
+       y = "Predictor",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# Republicans -----------------------------------------------------------------
+rep.priors2 <- 
+  simulate_prior(rep.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+rep.posteriors2 <- 
+  posterior_samples(rep.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+rep.prior.check2 <- 
+  bind_rows(rep.priors2, rep.posteriors2) %>% 
+  mutate(cat = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt.-Not Requested",
+                         str_detect(term, "munoluc") ~ "No Asgmt.-Not Requested",
+                         str_detect(term, "lucreq") ~ "Luc. Asgmt.-Requested"),
+         term = case_when(str_detect(term, "party_contribs") ~ "Party Contribs.",
+                          str_detect(term, "seniority") ~ "Seniority",
+                          str_detect(term, "lagged_les") ~ "Lagged LES",
+                          str_detect(term, "vote_margin") ~ "Vote Margin",
+                          str_detect(term, "majority_member") ~ "Majority Member",
+                          str_detect(term, "Intercept") ~ "Intercept"))
+
+rep.prior.plot2 <- 
+  ggplot(data = rep.prior.check2, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  facet_wrap(~ cat) +
+  stat_halfeye(normalize = "groups") +
+  scale_x_continuous(limits = c(-10, 10), breaks = pretty_breaks(n = 10)) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Republican Multinomial Logit Models",
+       x = "Log-odds Coefficient Estimate",
+       y = "Predictor",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+(dem.prior.plot2 | rep.prior.plot2 + theme(axis.text.y = element_blank()))
+```
+
+
+# Estimation with Informative Priors
+
+Estimating the probability committee assignments is not new to the congressional literature. Indeed there is some established evidence on how party contributions affect the probability of committee assignments as discussed in the [Institutional Advancement and Collective Action] section. There are also studies that provide evidence on how norms like seniority affect committee assignments. The purpose of this section is to leverage what we already know about how the variables in my model should affect the probability of receiving a lucrative committee assignment to improve my estimations. 
+
+What do we know about member contributions to their party and committee assignments? In his paper on contributions how member contributions to parties affect transfers to prestige committees @heberlig2003 estimates that a 1-unit increase in party contributions is associated with approximately a 55 percent probability in transferring to a prestige committee. Other research also indicates that contributions should have a positive effect [@heberlig2006, @heberlig2007, @cann2008, @heberlig2012]. Since it is expected that this effect will be positive but not too large, I use a mean of 0.5 and a standard deviation of 0.5. On the logit scale, this translates to a mean of `r plogis(0.5)` and standard deviation of `r plogis(0.5)`. Next, there is a large literature on the importance of seniority as a norm for making committee assignments and the role of committee requests. @shepsle1978, for example, argues that seniority is an important quality that steering committees are unlikely to ignore when assignment members to committees (also see @katz1996; @cann2008a; @kellermann2009). According to this argument, committee assignments are earned with years of service and proven loyalty and are not given to freshmen or other members with limited service. As such, seniority should have a positive effect of getting a lucrative committee assignment. @shepsle1978 also argues that one of the primary objectives of each party's steering committee is to accommodate member requests. That is, the steering committees work to give as many of their members the committee assignments that they ask for as they can. Thus, committee requests should also play an important role in determining lucrative assignments. To reflect the importance of these variables in my model, I use a mean of 1 and a standard deviation of 0.5 as the priors for these coefficients. 
+
+The importance of next variable in the model, vote margin, has more limited evidence. The hypothesis that good committee assignments are given to members with slim vote margins as a strategy to help them in future elections was originally proposed by @masters1961 and @clapp1964 and has since become known as the Master-Clapp hypothesis. Unfortunately, researchers have struggled to evidence of this strategy [@bullock1972, @smith1983a, @eulau1984]. As a result, I use a prior with mean 0 and standard deviation of 0.5 for the vote margin variable. For the majority member variable, I use a prior with mean 0.5 and standard deviation 0.5 because the majority party has more committee seats to assign members thus increasing the chances that a member would be assigned to the most important lucrative committees. For the last predictor, the lagged legislative effectiveness score, I use a prior with a mean of 0 and standard deviation of 1. Although I am not aware any studies on the link between legislator effectiveness and committee assignments, it is plausible to believe that party leaders would want competent members serving on important committees, but whether they would be placed on important committees because of their skill and despite their committee preferences is inclear. Finally, to reflect the low likelihood of receiving an assignment to a lucrative committees, I use a prior with a mean of $-$0.5 and and standard deviation of 0.5 for the intercept. 
+
+```{r informed-est1, warning = FALSE, message = FALSE, echo = FALSE}
+# Democrats -------------------------------------------------------------------
+load(file = "Models/dem_inf_luc_fit2.Rda")
+
+dem.luc.results3 <- 
+  tidy(dem.inf.luc.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+dem.luc.stats3 <- 
+  dem.luc.results3 %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+
+# Republicans -----------------------------------------------------------------
+load(file = "Models/rep_inf_luc_fit2.Rda")
+
+rep.luc.results3 <- 
+  tidy(rep.inf.luc.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+rep.luc.stats3 <- 
+  dem.luc.results3 %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+```
+
+```{r logit-infprior-analysis, fig.dim = c(10, 5), fig.align = "center", fig.cap = "Analysis of Informed Prior Influence on Coefficient Estimates. This figure show the difference between the informed priors and posterior estimates. Larger distances between these estimates entail a greater influence of the prior on the posterior estimate."}
+# Democrats -------------------------------------------------------------------
+dem.priors3 <- 
+  simulate_prior(dem.inf.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+dem.posteriors3 <- 
+  posterior_samples(dem.inf.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+dem.prior.check3 <- bind_rows(dem.priors3, dem.posteriors3)
+
+dem.prior.plot3 <- 
+  ggplot(data = dem.prior.check3, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  stat_halfeye(normalize = "groups") +
+  scale_x_continuous(limits = c(-3, 3), breaks = pretty_breaks(n = 6)) +
+  scale_y_discrete(labels = c("Intercept", "Lagged LES", "Lucrative Request",
+                              "Majority Member", "Party Contributions",
+                              "Policy Request", "Seniority", "Vote Margin")) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Democratic Logistic Model",
+       x = "Log-odds Coefficient Estimate",
+       y = "Predictor",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+
+# Republicans -----------------------------------------------------------------
+rep.priors3 <- 
+  simulate_prior(rep.inf.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+rep.posteriors3 <- 
+  posterior_samples(rep.inf.luc.fit2) %>% 
+  select(b_Intercept:b_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+rep.prior.check3 <- bind_rows(rep.priors3, rep.posteriors3)
+
+rep.prior.plot3 <- 
+  ggplot(data = rep.prior.check3, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  stat_halfeye(normalize = "groups") +
+  scale_x_continuous(limits = c(-3, 3), breaks = pretty_breaks(n = 6)) +
+  scale_y_discrete(labels = c("Intercept", "Lagged LES", "Lucrative Request",
+                              "Majority Member", "Party Contributions",
+                              "Policy Request", "Seniority", "Vote Margin")) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Republican Logistic Model",
+       x = "Log-odds Coefficient Estimate",
+       y = "",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+(dem.prior.plot3 | rep.prior.plot3 + theme(axis.text.y = element_blank()))
+```
+
+Figure \@ref(fig:logit-infprior-analysis) visualizes the influence of these informed priors on the posterior estimates and Table \@ref(tab:informed-tbl1) shows the coefficient estimates. From Figure \@ref(fig:logit-infprior-analysis), we see that requests for lucrative committees and party contributions both have larger effects on lucrative committee assignment than expected, while the other estimates are reasonably well anticipated. How much do these informative priors change our posterior estimates? Table \@ref(tab:informed-tbl1) shows that they change the posteriors quite a bit. The columns labeled "Weakly Informative Priors" for each party show the original results with weakly informative priors as discussed above. After using informative priors, based on previous research, the effect of party contributions on lucrative committee assignments is considerably smaller and more preciously estimated though still substantively large. A 1-unit increase in party contributions is associated with a `r round(plogis(as.numeric(dem.luc.stats3$party_contribs_2z$estimate)) * 100, 0)` and `r round(plogis(as.numeric(dem.luc.stats3$party_contribs_2z$estimate)) * 100, 0)` percent increase in the relative probability of being assigned to a lucrative committee for Democrats and Republicans, respectively. On the absolute scale, the effect of a 1-unit increase in party contributions on lucrative committee assignments is estimated to be about `r round(plogis(as.numeric(dem.luc.stats3$intercept$estimate) + as.numeric(dem.luc.stats3$party_contribs_2z$estimate)) - plogis(as.numeric(dem.luc.stats3$intercept$estimate)), 2) * 100` and  `r round(plogis(as.numeric(rep.luc.stats3$intercept$estimate) + as.numeric(rep.luc.stats3$party_contribs_2z$estimate)) - plogis(as.numeric(rep.luc.stats3$intercept$estimate)), 2) * 100` percent for Democrats and Republicans, respectively.
+
+```{r informed-tbl1}
+table3 <- 
+  modelsummary(list("Weakly Informative Priors" = dem.luc.fit2, 
+                    "Informative Priors" = dem.inf.luc.fit2, 
+                    "Weakly Informative Priors" = rep.luc.fit2, 
+                    "Informative Priors" = rep.inf.luc.fit2),
+               output = "modelsummary_list",
+               fmt = 2,
+               statistic = "conf.int",
+               conf_level = 0.95)
+
+## GET HELP TO CLEAN THIS CODE ##
+table3$`Weakly Informative Priors`$tidy <- 
+  table3$`Weakly Informative Priors`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+table3$`Informative Priors`$tidy <- 
+  table3$`Informative Priors`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+table3$`Weakly Informative Priors`$tidy <- 
+  table3$`Weakly Informative Priors`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+table3$`Informative Priors`$tidy <- 
+  table3$`Informative Priors`$tidy %>% 
+  mutate(group = case_when(group == "icpsr" ~ "Member",
+                           group == "state" ~ "State",
+                           group == "state:congress" ~ "State-Congress"))
+
+modelsummary(table3, 
+             group = term ~ model,
+             coef_map = c("party_contribs_2z" = "Party Contribs.", 
+                          "lagged_les_2z" = "Lagged LES", 
+                          "vote_margin_2z" = "Vote Margin", 
+                          "seniority_2z" = "Seniority", 
+                          "luc_request_2z" = "Lucrative Cmte. Request", 
+                          "policy_req_2z" = "Policy Cmte. Request", 
+                          "majority_member_2z" = "Majority Member", 
+                          "(Intercept)" = "Intercept"),
+             fmt = 2,
+             statistic = "conf.int",
+             conf_level = 0.95,
+             gof_map = gm,
+             title = "Member Contributions and Assignments to Lucrative Committee")  %>% 
+  add_header_above(c(" " = 1, "Democrats" = 2, "Republicans" = 2)) %>% 
+  footnote("Models are estimated using multilevel logistic regression with informative priors. All models are estimated with Stan via BRMS with four Markov chain Monte Carlo (MCMC) chains. All chains indicate convergence with every R value being less than 1.01.", 
+           threeparttable = T,
+           fixed_small_size = TRUE) %>% 
+  kable_styling(latex_options = "scale_down")
+```
+
+Next, I use nearly same priors to replicate the models testing Hypothesis 3. Because the model is classifying members between the three categories of being assigned to a lucrative committee without requesting one, being assigned to a lucrative committee with requesting one, and not getting assigned to a lucrative committee without requesting one with requesting a lucrative committee but not getting one as the reference group, we can alter our prior expectations for each category to get a more realistic model. Starting first with party contributions, previous research has assumed that members are rewarded for their contributions by getting the committee assignments that they want. As a result, I expect party contributions to have no effect on getting a lucrative committee for members who do not ask for one. Instead, party contributions should make it more likely that members get the committee assignments that they ask for. To reflect this expectation, I use a prior mean of 0 and standard deviation of 0.5 for the two categories of members who do not request a lucrative committee, and a mean of 0.5 with standard deviation 0.5 for the category of members that request a lucrative committee. Next, seniority norms in Congress dictate that the committee preferences of more senior members are prioritized in the committee assignment process. Thus, senior members should be very unlikely to be assigned to a committee against their will. This is reflected in the model by setting the prior mean to -1 and standard deviation to 0.5 for members in the group that gets assigned to a lucrative committee without requesting one. For members who request a lucrative committee and get one I use a prior mean of 1 with standard deviation 0.5 and a mean of 1 with standard deviation of 0.5 for members in the group that does not request a lucrative committee and does not receive one. The Masters-Clapp hypothesis argues that steering committees use committee assignments to help members who were elected with a slim margin win their next election. The previous evidence for this hypothesis is limited, as discussed above, so I set the prior mean to 0 and standard deviation to 0.5 for all three groups. 
+
+The expectations for the next two variables, majority member and lagged LES, are a little less clear. The majority party does have more committee seats to assign, so presumably they should be less likely to have to assign members to committees that where not requested. However, the majority party may be more likely to assign members to lucrative committees regardless of whether they requested one or not to ensure that they get the best people on the most important committees. As a result of these competing expectations, I use a mean of 0 and standard deviation of 1 for the majority member predictor in all groups. Next, is lagged LES. As discussed above, there is no existing work investigating the relationship between legislator effectiveness and committee assignments, but it is reasonable to expect that more effective members will be placed on important committee. Will they, however, be placed on committees against their preferences? The answer to this is unclear, so I use a prior with mean 0 and standard deviation 1. Finally, I set the expectations for the intercepts. All predictors are centered (and standardized) so each intercept estimates the mean probability of being in each outcome group. The literature on committee assignments generally assumes that steering committees work to accommodate their members' preferences which implies that members should be unlikely to receive committee assignments that they do not ask for. To reflect this, I set the intercept prior for the group of members that receive a lucrative committee assignment against their preference to have mean -1 and standard deviation 0.5. Similarly, members should be more likely to get the assignments they request so I set the priors for the group of member who ask for a lucrative committee and get one, as well as the group of members who do not request a lucrative committee and do not get one to mean 1 and standard deviation 0.5.    
+
+Figure \@ref(fig:mlogit-infprior-analysis) shows how these informed priors change the multinomial estimates. Starting first with vote margin predictor, we see that the prior captures the posterior estimates for Democrats, but slightly deviates for Republicans. As vote margin increases, Republicans are less likely to be in the group of members that received a lucrative committee after requesting one when compared to members who requested a lucrative committee assignment but did not receive one. This indicates that members who win with narrow margins are less likey to get the lucrative committee assignment they request. The largest differences between priors and posteriors are for the seniority predictor. In contradiction to the seniority norms, as seniority increases Democratic and Republican members are more likely to be in the group of members that receives a lucrative committee assignment when it was not requested than the group of members who requested a lucrative assignment but did not request one. Next, we see that party contributions also deviate from the expectations established by prior literature. Making more contributions to parties and parties' candidates increases the probability of being in the group that receives a lucrative committee without requesting one, though the deviation is larger for Democrats than Republicans. Finally, the expectations for majority member and lagged LES match nicely with the posteriors.
+
+```{r informed-est2, warning = FALSE, message = FALSE, echo = FALSE}
+load(file = "Models/dem_inf_luc_asgmt_fit2.Rda")
+dem.cat.results2 <- 
+  tidy(dem.inf.luc.asgmt.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+dem.cat.stats2 <- 
+  dem.cat.results2 %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+
+
+load(file = "Models/rep_inf_luc_asgmt_fit2.Rda")
+rep.cat.results2 <- 
+  tidy(rep.inf.luc.asgmt.fit2, conf.method = "HPDinterval", robust = TRUE) %>% 
+  filter(effect == "fixed") %>% 
+  mutate(
+    prob_est = round(plogis(estimate), 2) * 100,
+    prob_est = as.character(prob_est),
+    # round the numbers
+    across(c(estimate, conf.low, conf.high), printy::fmt_fix_digits, 2),
+    se = printy::fmt_fix_digits(std.error, 2),
+    # use a minus sign instead of a hyphen for negative numbers
+    #across(c(estimate, conf.low, conf.high, printy::fmt_minus_sign, .)),
+    ci = glue::glue("[{conf.low}, {conf.high}]")
+  ) %>% 
+  select(term, estimate, se, ci, prob_est)
+
+rep.cat.stats2 <- 
+  rep.cat.results2 %>% 
+  mutate(term = janitor::make_clean_names(term)) %>%
+  split(.$term)
+```
+
+```{r mlogit-infprior-analysis, fig.dim = c(12, 5), fig.align = "center", fig.cap = "Analysis of Prior Influence on Slope Coefficient Estimate. This figure show the difference between the prior and posterior estimates. Larger distances between these estimates entail a greater influence of the prior on the posterior estimate."}
+dem.priors4 <- 
+  simulate_prior(dem.inf.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+dem.posteriors4 <- 
+  posterior_samples(dem.inf.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+dem.prior.check4 <- 
+  bind_rows(dem.priors4, dem.posteriors4) %>% 
+  mutate(cat = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt.-Not Requested",
+                         str_detect(term, "munoluc") ~ "No Asgmt.-Not Requested",
+                         str_detect(term, "lucreq") ~ "Luc. Asgmt.-Requested"),
+         term = case_when(str_detect(term, "party_contribs") ~ "Party Contribs.",
+                          str_detect(term, "seniority") ~ "Seniority",
+                          str_detect(term, "lagged_les") ~ "Lagged LES",
+                          str_detect(term, "vote_margin") ~ "Vote Margin",
+                          str_detect(term, "majority_member") ~ "Majority Member",
+                          str_detect(term, "Intercept") ~ "Intercept"))
+
+dem.prior.plot4 <- 
+  ggplot(data = dem.prior.check4, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  facet_wrap(~ cat) +
+  stat_halfeye(normalize = "groups") +
+  #scale_x_continuous(limits = c(-10, 10), breaks = pretty_breaks(n = 10)) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Democratic Multinomial Logit Models",
+       x = "Log-odds Coefficient Estimate",
+       y = "Predictor",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# Republicans -----------------------------------------------------------------
+rep.priors4 <- 
+  simulate_prior(rep.inf.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "prior")
+
+rep.posteriors4 <- 
+  posterior_samples(rep.inf.luc.asgmt.fit2) %>% 
+  select(b_munoluc_Intercept:b_mulucreq_majority_member_2z) %>% 
+  pivot_longer(cols = everything(), names_to = "term", values_to = "est") %>% 
+  mutate(group = "posterior")
+
+rep.prior.check4 <- 
+  bind_rows(rep.priors4, rep.posteriors4) %>% 
+  mutate(cat = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt.-Not Requested",
+                         str_detect(term, "munoluc") ~ "No Asgmt.-Not Requested",
+                         str_detect(term, "lucreq") ~ "Luc. Asgmt.-Requested"),
+         term = case_when(str_detect(term, "party_contribs") ~ "Party Contribs.",
+                          str_detect(term, "seniority") ~ "Seniority",
+                          str_detect(term, "lagged_les") ~ "Lagged LES",
+                          str_detect(term, "vote_margin") ~ "Vote Margin",
+                          str_detect(term, "majority_member") ~ "Majority Member",
+                          str_detect(term, "Intercept") ~ "Intercept"))
+
+rep.prior.plot4 <- 
+  ggplot(data = rep.prior.check4, aes(x = est, y = term, fill = group,
+                                   shape = group)) +
+  facet_wrap(~ cat) +
+  stat_halfeye(normalize = "groups") +
+  #scale_x_continuous(limits = c(-10, 10), breaks = pretty_breaks(n = 10)) +
+  scale_fill_manual(values = c("grey45", "grey75"),
+                       labels = c("Posterior", "Prior")) +
+  scale_shape_discrete(labels = c("Posterior", "Prior")) +
+  labs(title = "Republican Multinomial Logit Models",
+       x = "Log-odds Coefficient Estimate",
+       y = "Predictor",
+       fill = "Estimate",
+       shape = "Estimate") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+(dem.prior.plot4 | rep.prior.plot4 + theme(axis.text.y = element_blank()))
+```
+
+The results of these models are shown along side the original models in Table \@ref(tab:informed-tbl2). Here again, we see that the using more informative priors reduces the size of the coefficient estimates and improves precision. The main findings, however, remain unchanged. As party contributions increase, members have a higher probability of being in the group that gets assigned to a lucrative committee without requesting one when compared to the group of members that requests a lucrative committee but does not get assigned to one, which is consistent with the original findings.  
+
+```{r informed-tbl2}
+table4 <- 
+  modelsummary(list("Weakly Informative Priors" = dem.luc.asgmt.fit2, 
+                    "Informative Priors" = dem.inf.luc.asgmt.fit2, 
+                    "Weakly Informative Priors" = rep.luc.asgmt.fit2, 
+                    "Informative Priors" = rep.inf.luc.asgmt.fit2), 
+               output = "modelsummary_list",
+               fmt = 2,
+               statistic = "conf.int",
+               conf_level = 0.95,
+               gof_map = gm)
+
+table4$`Weakly Informative Priors`$tidy <- 
+  table4$`Weakly Informative Priors`$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+table4$`Informative Priors`$tidy <- 
+  table4$`Informative Priors`$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+table4$`Weakly Informative Priors `$tidy <- 
+  table4$`Weakly Informative Priors `$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+table4$`Informative Priors `$tidy <- 
+  table4$`Informative Priors `$tidy %>% 
+  mutate(group = case_when(str_detect(term, "mulucnotreq") ~ "Luc. Asgmt. - Not Requested",
+                           str_detect(term, "munoluc") ~ "No Asgmt. - Not Requested",
+                           str_detect(term, "lucreq") ~ "Luc. Asgmt. - Requested"))
+
+rows <- tribble(~ group, ~ term, ~ `Informative Priors`, ~ `Informative Priors`, ~ `Informative Priors`, ~ `Informative Priors`,
+                "Reference: No Luc. Asgmt. - Requested", "", "", "", "", "",
+                "Outcome Category:", "", "", "", "", "")
+attr(rows, 'position') <- c(1, 0)
+
+modelsummary(table4, 
+             group = group + term ~ model,
+             coef_map = c("munoluc_party_contribs_2z" = "Party Contribs.",
+                          "mulucnotreq_party_contribs_2z" = "Party Contribs.",
+                          "mulucreq_party_contribs_2z" = "Party Contribs.",
+                          "munoluc_seniority_2z" = "Seniority",
+                          "munoluc_lagged_les_2z" = "Lagged LES",
+                          "munoluc_vote_margin_2z" = "Vote Margin",
+                          "munoluc_majority_member_2z" = "Majority Member",
+                          "mulucnotreq_seniority_2z" = "Seniority",
+                          "mulucnotreq_lagged_les_2z" = "Lagged LES",
+                          "mulucnotreq_vote_margin_2z" = "Vote Margin",
+                          "mulucnotreq_majority_member_2z" = "Majority Member",
+                          "mulucreq_seniority_2z" = "Seniority",
+                          "mulucreq_lagged_les_2z" = "Lagged LES",
+                          "mulucreq_vote_margin_2z" = "Vote Margin",
+                          "mulucreq_majority_member_2z" = "Majority Member",
+                          "munoluc_(Intercept)" = "Intercept",
+                          "mulucnotreq_(Intercept)" = "Intercept",
+                          "mulucreq_(Intercept)" = "Intercept"),
+             fmt = 2,
+             statistic = "conf.int",
+             conf_level = 0.95,
+             gof_map = gm,
+             add_rows = rows,
+             title = "Member Contributions and Committee Assignment Type")  %>% 
+  add_header_above(c(" " = 2, "Democrats" = 2, "Republicans" = 2)) %>% 
+  row_spec(1, bold = TRUE) %>% 
+  footnote("Models are estimated using multileve multinomial logistic regression and informative priors. Random effects components are excluded from the table for simplicity. The included random effects components are intercepts for individual members, and state intercepts nested within Congresses. All models are estimated with Stan via BRMS with four Markov chain Monte Carlo (MCMC) chains. All chains indicate convergence with every R value being less than 1.01.", 
+           threeparttable = T,
+           fixed_small_size = TRUE) %>% 
+  kable_styling(latex_options = "scale_down")
+```
+

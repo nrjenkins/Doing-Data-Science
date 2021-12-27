@@ -1,0 +1,13 @@
+"0",""
+"0","# click-through-rate density plot"
+"0","data.1 %>% "
+"0","  mutate(ctr = clicks / impressions) %>% "
+"0","  ggplot(aes(x = ctr)) +"
+"0","  facet_wrap(~ age_group) +"
+"0","  geom_density(fill  = ""skyblue"", color = ""black"") +"
+"0","  labs(title = ""Distribution of Cick-Through-Rate by Age Group"","
+"0","       x = ""Click-Through-Rate"") +"
+"0","  ggpubr::theme_pubclean()"
+"2","Warning:"
+"2"," Removed 3066 rows containing non-finite values (stat_density).
+"

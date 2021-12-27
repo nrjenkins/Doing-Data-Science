@@ -1,0 +1,28 @@
+{
+    "id": "30B8FB87",
+    "path": "~/Documents/Research/Projects/PACs and Small-dollar Donations/01-Data_Cleaning-old.Rmd",
+    "project_path": null,
+    "type": "r_markdown",
+    "hash": "1201664103",
+    "contents": "",
+    "dirty": false,
+    "created": 1639934429482.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "chunk_output_type": "console",
+        "source_window_id": "",
+        "Source": "Source",
+        "docOutlineVisible": "1",
+        "cursorPosition": "470,0",
+        "scrollLine": "465"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1617244895,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1617244895,
+    "read_only": false,
+    "read_only_alternatives": []
+}

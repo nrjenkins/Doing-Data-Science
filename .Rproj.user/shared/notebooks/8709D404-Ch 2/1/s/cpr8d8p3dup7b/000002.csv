@@ -1,0 +1,7 @@
+"0","# impressions histogram"
+"0","ggplot(data = data.1, aes(x = impressions)) +"
+"0","  facet_wrap(~ age_group) +"
+"0","  geom_histogram(binwidth = 1, fill  = ""skyblue"", color = ""black"") +"
+"0","  labs(title = ""Distribution of Impressions by Age Group"","
+"0","       x = ""Impressions"") +"
+"0","  ggpubr::theme_pubclean()"

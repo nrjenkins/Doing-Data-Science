@@ -1,0 +1,176 @@
+---
+surname: Nicholas R. Jenkins, Ph.D.
+position: "Data and Quantitative Political Scientist"
+address: "Riverside, CA"
+phone: +1 949 288-3417
+www: nicholasrjenkins.science
+email: "nicholas.jenkins@email.ucr.edu"
+github: nrjenkins
+linkedin: nrjenkins01
+headcolor: "000000"
+date: "`r format(Sys.time(), '%B %Y')`"
+docname: "Résumé"
+fontsize: 12pt
+output: 
+  vitae::awesomecv:
+    page_total: true
+    keep_tex: false
+always_allow_html: yes
+header-includes:
+  \usepackage{float}
+  \usepackage{multicol}
+  \usepackage{colortbl}
+  \hypersetup{colorlinks=true, urlcolor=[RGB]{0,154,205}}
+  \arrayrulecolor{white}
+  \usepackage{hhline}
+  \definecolor{light-gray}{gray}{0.95}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(pacman)
+p_load(tidyverse, vitae, rorcid, fontawesome, emojifont, kableExtra, huxtable,
+       gridExtra, scholar)
+```
+
+# \faIcon{cogs} Skills
+
+```{r Skills}
+tribble(
+  ~`\\faIcon{chart-area} Statistics`, ~`\\faIcon{code} Coding Languages`, ~`\\faIcon{tools} Other`,
+  "Bayesian Statistics -- Multilevel Modeling -- Causal Inference -- Experimental Design -- Time Series Analysis -- Generalized Linear Models",
+  "\\faIcon{r-project} -- Stan -- Jags -- SQL -- Some Python -- Some HTML",
+  "\\faIcon{git}/\\faIcon{github} -- \\faIcon{markdown} -- RMarkdown -- Jupyter Notebooks -- \\LaTeX"
+) %>% 
+  kable(booktabs = T, align = "c", escape = F, format = "latex") %>% 
+  kable_styling(full_width = F, font_size = 9, latex_options = "HOLD_position") %>% 
+  row_spec(0, bold = T, color = "#009acd") %>% 
+  row_spec(1, bold = F, color = "black") %>% 
+  column_spec(column = 2:3, width = "4.75cm") %>% 
+  column_spec(column = 1, width = "6.75cm")
+```
+
+# \faIcon{graduation-cap} Education
+
+```{r Education}
+education <-
+  tribble(~university, ~completion_date, ~degree_program, ~place,
+          "University of California, Riverside", "Exp. 2022", "Ph.D. in Political Science", "Riverside, CA",
+          "California State University, Long Beach", "2017", "M.A. in Economics", "Long Beach, CA") %>%
+  mutate(count = c(3, 2)) %>% 
+  uncount(count) %>% 
+  mutate(descriptions = c(
+    "Coursework in statistics, research methods, political behavior, and political economy.",
+    "5 published projects analyzing political behavior with advanced statistical modeling (see publications section).",
+    "Dissertation: Built a Confirmatory Factor Analysis model to measure congressional committee issue concentration and develop a theory of interest group influence in the policymaking process. Used data on 16 years of campaign finance records to test my theory.",
+    "Coursework in econometrics, research design, and advanced micro and macoeconomic theory.",
+    "Thesis: Used fixed effects regression to analyze the impact of E-Verify laws on wage and employment rates across the U.S."
+  ))
+  
+education %>% 
+  detailed_entries(what = university,
+                   when = completion_date,
+                   with = degree_program,
+                   where = place,
+                   why = descriptions,
+                   .protect = FALSE)
+```
+
+# \faIcon{briefcase} Professional Experience
+
+```{r Experience, results = "asis"}
+experience <- 
+  tribble(~position, ~org, ~when, ~place,
+          "Part-time Consultant - Graduate Quantitative Methods Center", "University of California, Riverside", "10/2021 -- Present", "Riverside, CA",
+          "Data Science Teaching Assistant - School of Public Policy", "University of California, Riverside", "03/2020 -- Present", "Riverside, CA",
+          "Teaching Assistant - Department of Political Science", "University of California, Riverside", "10/2018 -- Present", "Riverside, CA",
+          "Graduate Student Researcher", "Center for International Trade and Transportation", "05/2017 -- 09/2017", "Long Beach, CA",
+          "Teaching Assistant - Department of Economics", "California State University, Long Beach", "08/2015 -- 06/2017", "Long Beach, CA") %>% 
+  mutate(count = c(2, 4, 1, 1, 1)) %>% 
+  uncount(count) %>% 
+  mutate(descriptions = c(
+    "One-on-one consultations with graduate students across the university to help with statistics, statistical software, data wrangling, and data visualization.",
+    "Develop and teach workshops on R programming and statistical methods. Developed workshops include \\href{https://nicholasrjenkins.science/tutorial/bda_in_r/bayes_with_brms/}{Intro to Bayesian Data Analysis}, \\href{https://nicholasrjenkins.science/tutorial/glms/}{Generalized Linear Models}, Git and GitHub for Collaboration and Open Science, Time Series Analysis, and Data Visualization with ggplot.",
+    "Advise students in the Master of Public Policy (MPP) program on their capstone projects. Typical topics include helping students with data collection, cleaning, visualization, and analysis.",
+    "Developed a \\href{https://github.com/nrjenkins/MPP-Boot-Camp}{boot camp workshop} introducing incoming MPP students to the basics of working with data in R.",
+    "Develop and taught a \\href{https://github.com/nrjenkins/Data-Science-Workshop}{data science workshop} for second-year MPP students.",
+    "Designed a \\href{https://nicholasrjenkins.science/tutorial/policy-eval/}{policy evaluation project} for the policy analysis class that guides students through the process of data cleaning, data visualization, mapping, descriptive analysis, and causal modeling techniques for analyzing public policies.",
+    "Taught discussion sections for the following courses: Policy Evaluation, THeory and Methodology of Political Science, Politics and Economic Policy, and American Politics.",
+    "Labor market research, report writing, and data management for the center’s transportation and labor market research projects.",
+    "Taught lab sections for Introduction to Econometrics, Time Series Analysis, and Economic Statistics."
+  ))
+
+experience %>% 
+  detailed_entries(with = position,
+                   what = org,
+                   when = when,
+                   where = place,
+                   why = descriptions,
+                   .protect = FALSE)
+```
+
+
+# \faIcon{chart-bar} Additional Training
+
+```{r Training, results = "asis"}
+tribble(
+  ~workshop, ~org, ~year, ~place,
+  "Structural Equation Modeling in Longitudinal Research \\href{https://nrjenkins.github.io/files/docs/cv/APA_ATI_Completion_Certificate.pdf}{\\faIcon{file-contract}}", "Longitudinal Research Institute", 2020, "Online",
+  "Summer Program in Quantitative Methods of Social Research \\href{https://nrjenkins.github.io/files/docs/cv/ICPSR_Participation_Verification.pdf}{\\faIcon{file-contract}}", "Inter-university Consortium for Political and Social Research (ICPSR)", 2018, "Ann Arbor, MI",
+  "Macroeconomic Forecasting \\href{https://courses.edx.org/certificates/d1ac1a8d2755457a9651b9dad73c2602}{\\faIcon{file-contract}}", "International Monetary Fund (IMF) Institute for Capacity Development", 2017, "Online",
+) %>% 
+  mutate(count = c(1, 1, 1)) %>% 
+  uncount(count) %>% 
+  mutate(descriptions = c(
+    "This 5 day workshop covered growth models, factorial invariance, dealing with incomplete data, growth mixture models, ordinal outcomes, and latent change score models.",
+    "During this 4-week summer program I completed courses in Bayesian Modeling for the Social Sciences, Multilevel Models, and advanced mathematics.",
+    "This 9-week course covered forecasting models, vector autoregressions, and vector error correction models."
+  )) %>% 
+  detailed_entries(with = workshop,
+                   what = org,
+                   when = year,
+                   where = place,
+                   why = descriptions,
+                   .protect = FALSE)
+```
+
+
+# \faIcon{file-alt} Publications
+
+```{r Publications, results = "asis"}
+pub <- get_publications("FPXYTX0AAAAJ")
+pub %>% 
+  arrange(desc(year)) %>% 
+  filter(journal != "") %>% 
+  mutate(
+    title = case_when(
+      str_detect(title, "Do candidates benefit") ~ 
+        str_c(title, "\\href{https://www.journal-bpa.org/index.php/jbpa/article/view/111}{\\faIcon[regular]{file-pdf}}", sep = " "),
+      str_detect(title, "Do political donors have greater") ~ 
+        str_c(title, "\\href{https://osf.io/preprints/socarxiv/dt6c7/}{\\faIcon[regular]{file-pdf}} \\href{https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/SGCWGY}{\\faIcon{database}}", sep = " "),
+      str_detect(title, "Minimizing Whose Influence") ~ 
+        str_c(title, "\\href{https://osf.io/preprints/socarxiv/cf3jn/}{\\faIcon[regular]{file-pdf}} \\href{https://github.com/nrjenkins/PACs-and-Small-dollar-Donations}{\\faIcon{github}}", sep = " "),
+      str_detect(title, "Interest Groups, Policy Responses") ~ 
+        str_c(title, "\\href{https://www.worldscientific.com/doi/abs/10.1142/S1793993319500108}{\\faIcon[regular]{file-pdf}}", sep = " ")
+    ),
+    descriptions = c(
+      "Designed a conjoint survey experiment to test how accepting or refusing PAC contributions affects respondents' evaluation of candidates.",
+      "Designed an audit experiment to test the responsiveness of local government officials to information requests from donors and non-donors.",
+      "Used geographic campaign contribution data to detect corporate contributions to candidates made from within and outside the candidate's district and both Dirichlet and Zero-Inflated Gamma multilevel regression to see how anti-corporate PAC pledges affect corporate giving.",
+      "Used country-level data on the size of different economic sectors and government responses to interest rate shocks to examine if interest groups affect whether governments respond to shocks by defending the exchange rate or maintaing full employment."
+    )
+  ) %>% 
+  detailed_entries(with = title,
+                   what = author,
+                   when = year,
+                   where = journal,
+                   why = descriptions,
+                   .protect = FALSE)
+```
+
+
+# \faIcon{comment} References
+
+\footnotesize
+
+Available Upon Request

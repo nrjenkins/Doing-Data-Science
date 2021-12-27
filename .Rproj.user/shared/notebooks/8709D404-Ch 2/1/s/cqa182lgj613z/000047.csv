@@ -1,0 +1,22 @@
+"0","data.1 %>% 
+  mutate(gender = factor(gender,
+                         levels = c(0, 1),
+                         labels = c(""Female"", ""Male"")),
+         signed_in = factor(signed_in,
+                            levels = c(0, 1), 
+                            labels = c(""Not Logged In"", ""Logged In""))) %>% 
+  ggplot(aes(x = click_type, y = clicks, color = age_group)) +
+  facet_wrap(gender ~ signed_in) +
+  stat_summary(geom = ""pointrange"", position = ""jitter"") +
+  labs(title = ""User Clicks by Logged In Status and Age Group"",
+       x = ""Clicks"",
+       y = ""Mean"",
+       color = ""Age Group:"") +
+  ggpubr::theme_pubclean()
+"
+"2","No summary function supplied, defaulting to `mean_se()`
+"
+"2","No summary function supplied, defaulting to `mean_se()`
+"
+"2","No summary function supplied, defaulting to `mean_se()`
+"

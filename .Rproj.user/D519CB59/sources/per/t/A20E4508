@@ -1,0 +1,32 @@
+{
+    "id": "A20E4508",
+    "path": "~/Documents/Workshops & Conferences/Doing Data Science/Ch 2.Rmd",
+    "project_path": "Ch 2.Rmd",
+    "type": "r_markdown",
+    "hash": "1887312787",
+    "contents": "",
+    "dirty": false,
+    "created": 1639708512099.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "chunk_output_type": "inline",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "188,0",
+        "scrollLine": "169",
+        "rmdVisualMode": "true",
+        "rmdVisualWrapConfigured": "true",
+        "docOutlineVisible": "0",
+        "rmdVisualModeLocation": "6699:4977"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1639933897,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1639933897998,
+    "read_only": false,
+    "read_only_alternatives": []
+}
