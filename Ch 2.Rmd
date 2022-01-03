@@ -186,3 +186,5 @@ data.1 %>%
     ```
 
 3.  Now extend your analysis across days. Visualize some metrics and distributions over time.
+
+# Case Study: RealDirect
